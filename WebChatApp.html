@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #ccc;
+      margin: 10px;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    #chat-container div {
+      margin: 5px 0;
+    }
+
+    #input-container {
+      display: flex;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    #message {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    #send-button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #send-button:hover {
+      background-color: #0056b3;
+    }
+
+    #username-container {
+      display: flex;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #username {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    #set-username {
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #set-username:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div id="username-container">
+    <input type="text" id="username" placeholder="Enter your username">
+    <button id="set-username">Set Username</button>
+  </div>
+  <div id="chat-container"></div>
+  <div id="input-container">
+    <input type="text" id="message" placeholder="Type your message here...">
+    <button id="send-button">Send</button>
+  </div>
+
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const messageInput = document.getElementById('message');
+    const sendButton = document.getElementById('send-button');
+    const usernameInput = document.getElementById('username');
+    const setUsernameButton = document.getElementById('set-username');
+
+    let username = "Anonymous";
+
+    setUsernameButton.addEventListener('click', () => {
+      const inputName = usernameInput.value.trim();
+      if (inputName) {
+        username = inputName;
+        alert(`Username set to: ${username}`);
+        usernameInput.value = '';
+      } else {
+        alert('Please enter a valid username.');
+      }
+    });
+
+    // Replace with your WebSocket server URL
+    const socket = new WebSocket('ws://localhost:8080');
+
+    socket.addEventListener('open', () => {
+      console.log('Connected to the WebSocket server');
+    });
+
+    socket.addEventListener('message', (event) => {
+      const messageData = JSON.parse(event.data);
+      const message = document.createElement('div');
+      message.textContent = `${messageData.username} [${messageData.timestamp}]: ${messageData.message}`;
+      chatContainer.appendChild(message);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+      const messageText = messageInput.value.trim();
+      if (messageText) {
+        const timestamp = new Date().toLocaleTimeString();
+        const messageData = {
+          username: username,
+          message: messageText,
+          timestamp: timestamp
+        };
+
+        const message = document.createElement('div');
+        message.textContent = `${username} [${timestamp}]: ${messageText}`;
+        chatContainer.appendChild(message);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        socket.send(JSON.stringify(messageData));
+        messageInput.value = '';
+      }
+    }
+  </script>
+</body>
+</html>
